@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SME Directory — DBW</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --espresso:#2C1F17; --brown:#4A3728; --brown-mid:#7A5C48;
+    --sand:#C4B09A; --cream:#EDE8E0; --parchment:#F5F1EB;
+    --white:#FDFBF8; --text:#1E1410; --text-mid:#4A3728;
+    --text-muted:#9A8878; --border:#D8CFBF; --border-dark:#B8A898;
+    --radius:2px; --radius-lg:4px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Barlow',sans-serif;background:var(--parchment);color:var(--text);min-height:100vh;}
+
+  .app-header{background:var(--espresso);padding:0 36px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--brown);}
+  .header-left{display:flex;align-items:center;gap:20px;}
+  .dbw-logo{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;letter-spacing:-0.5px;color:var(--cream);line-height:1;}
+  .header-divider{width:1px;height:28px;background:var(--brown-mid);}
+  .header-title{font-size:12px;font-weight:500;color:var(--sand);letter-spacing:0.12em;text-transform:uppercase;}
+  .header-actions{display:flex;gap:10px;align-items:center;}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius);font-family:'Barlow',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;letter-spacing:0.06em;text-transform:uppercase;}
+  .btn-primary{background:var(--cream);color:var(--espresso);}
+  .btn-primary:hover{background:#fff;}
+  .btn-ghost{background:transparent;color:var(--sand);border:1px solid var(--brown-mid);}
+  .btn-ghost:hover{background:var(--brown);color:var(--cream);}
+  .btn-sm{padding:6px 12px;font-size:11px;}
+  .btn-danger{background:transparent;color:#C17070;border:1px solid #C17070;}
+  .btn-danger:hover{background:rgba(193,112,112,0.1);}
+  .btn-save{background:var(--espresso);color:var(--cream);border:1px solid var(--espresso);}
+  .btn-save:hover{background:var(--brown);}
+  .btn-add-disc{background:transparent;color:var(--brown-mid);border:1px solid var(--border);font-size:11px;padding:5px 10px;}
+  .btn-add-disc:hover{background:var(--cream);border-color:var(--brown-mid);}
+
+  .app-body{display:flex;height:calc(100vh - 96px);}
+  .sidebar{width:268px;background:var(--white);border-right:1px solid var(--border);padding:24px 18px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex-shrink:0;}
+  .main{flex:1;overflow-y:auto;padding:28px 32px;}
+
+  .filter-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;padding:10px 4px 5px;}
+  .filter-input{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:var(--parchment);outline:none;}
+  .filter-input:focus{border-color:var(--brown-mid);background:var(--white);}
+  select.filter-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239A8878' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:26px;}
+  .filter-divider{border:none;border-top:1px solid var(--border);margin:10px 0 2px;}
+  .result-count{font-size:11px;color:var(--text-muted);padding:6px 4px;letter-spacing:0.03em;}
+  .clear-btn{font-size:11px;color:var(--brown-mid);cursor:pointer;background:none;border:none;font-family:'Barlow',sans-serif;padding:4px 4px;letter-spacing:0.05em;text-transform:uppercase;font-weight:500;text-align:left;}
+  .clear-btn:hover{color:var(--espresso);}
+
+  .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--espresso);}
+  .page-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:600;color:var(--espresso);letter-spacing:0.02em;line-height:1;}
+  .page-meta{font-size:11px;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-top:4px;}
+
+  .status-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px;}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:#7A9A6A;flex-shrink:0;}
+  .status-dot.syncing{background:var(--sand);animation:pulse 1s infinite;}
+  .status-dot.error{background:#C17070;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .status-text{font-size:11px;color:var(--text-muted);letter-spacing:0.05em;}
+
+  .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+  .contact-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;transition:border-color 0.15s,box-shadow 0.15s;cursor:pointer;position:relative;}
+  .contact-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--border);border-radius:var(--radius-lg) 0 0 var(--radius-lg);transition:background 0.15s;}
+  .contact-card:hover{border-color:var(--brown-mid);box-shadow:0 4px 20px rgba(44,31,23,0.08);}
+  .contact-card:hover::before{background:var(--espresso);}
+  .card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+  .card-firm{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:600;color:var(--espresso);line-height:1.2;letter-spacing:0.02em;}
+  .card-contact{font-size:12px;color:var(--text-mid);margin-top:3px;}
+  .card-actions{display:flex;gap:5px;opacity:0;transition:opacity 0.15s;flex-shrink:0;}
+  .contact-card:hover .card-actions{opacity:1;}
+  .icon-btn{width:26px;height:26px;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.12s;}
+  .icon-btn:hover{background:var(--cream);border-color:var(--brown-mid);}
+  .icon-btn svg{width:12px;height:12px;stroke:var(--text-mid);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+  .card-pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;}
+  .pill{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:3px 8px;border-radius:1px;letter-spacing:0.06em;text-transform:uppercase;}
+  .pill-disc{background:var(--espresso);color:var(--cream);}
+  .pill-state{background:var(--cream);color:var(--brown);border:1px solid var(--sand);}
+  .pill-region{background:transparent;color:var(--brown-mid);border:1px solid var(--border);}
+
+  .card-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .card-meta-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-mid);overflow:hidden;}
+  .card-meta-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .card-meta-item svg{width:11px;height:11px;stroke:var(--text-muted);fill:none;stroke-width:1.8;flex-shrink:0;}
+  .card-notes{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);line-height:1.6;font-style:italic;}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted);}
+  .empty-state svg{width:40px;height:40px;stroke:var(--border);fill:none;stroke-width:1.5;margin:0 auto 14px;display:block;}
+  .empty-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:600;color:var(--brown-mid);margin-bottom:6px;letter-spacing:0.03em;}
+  .empty-sub{font-size:13px;}
+  .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--text-muted);font-size:13px;letter-spacing:0.05em;text-transform:uppercase;}
+  .spinner{width:18px;height:18px;border:1.5px solid var(--border);border-top-color:var(--brown);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .app-footer{background:var(--espresso);padding:10px 36px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--brown);}
+  .footer-left{font-size:10px;color:var(--sand);letter-spacing:0.15em;text-transform:uppercase;font-weight:500;}
+  .footer-right{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;color:var(--sand);letter-spacing:0.05em;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(20,12,8,0.65);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s;}
+  .modal-backdrop.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--white);border-radius:var(--radius-lg);width:100%;max-width:700px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(20,12,8,0.3);transform:translateY(16px);transition:transform 0.2s;border:1px solid var(--border);}
+  .modal-backdrop.open .modal{transform:translateY(0);}
+  .modal-header{padding:0 28px;border-bottom:1px solid var(--brown);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--espresso);z-index:1;border-radius:var(--radius-lg) var(--radius-lg) 0 0;height:56px;}
+  .modal-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:600;color:var(--cream);letter-spacing:0.05em;text-transform:uppercase;}
+  .modal-close{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--brown-mid);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--sand);font-size:18px;line-height:1;}
+  .modal-close:hover{background:var(--brown);color:var(--cream);}
+  .modal-body{padding:24px 28px;display:flex;flex-direction:column;gap:16px;}
+  .modal-footer{padding:16px 28px 22px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-group{display:flex;flex-direction:column;gap:5px;}
+  .form-group.full{grid-column:1/-1;}
+  .form-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;}
+  .form-input{padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);font-family:'Barlow',sans-serif;font-size:14px;color:var(--text);outline:none;transition:border-color 0.15s;background:var(--white);}
+  .form-input:focus{border-color:var(--brown);box-shadow:0 0 0 2px rgba(74,55,40,0.08);}
+  textarea.form-input{resize:vertical;min-height:68px;line-height:1.5;}
+
+  .pill-input-wrap{border:1px solid var(--border);border-radius:var(--radius);background:var(--white);transition:border-color 0.15s;}
+  .pill-input-wrap:focus-within{border-color:var(--brown);}
+  .pill-input-selected{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px 4px;min-height:38px;}
+  .pill-removable{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 6px 3px 8px;border-radius:1px;background:var(--cream);color:var(--brown);border:1px solid var(--sand);text-transform:uppercase;letter-spacing:0.05em;}
+  .pill-removable.disc{background:var(--espresso);color:var(--cream);border-color:var(--espresso);}
+  .pill-remove-btn{background:none;border:none;cursor:pointer;color:var(--sand);font-size:14px;line-height:1;padding:0 1px;display:flex;align-items:center;}
+  .pill-removable.disc .pill-remove-btn{color:var(--sand);}
+  .pill-remove-btn:hover{color:#C17070;}
+  .pill-dropdown-trigger{padding:3px 10px 8px;}
+  .pill-dropdown-trigger select{border:none;outline:none;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text-muted);background:transparent;cursor:pointer;width:100%;}
+
+  .add-discipline-row{display:flex;gap:8px;align-items:center;padding:6px 10px 8px;}
+  .add-discipline-input{flex:1;border:none;outline:none;font-family:'Barlow',sans-serif;font-size:13px;color:var(--text);background:transparent;border-bottom:1px solid var(--border);}
+  .add-discipline-input::placeholder{color:var(--text-muted);}
+  .add-discipline-btn{font-size:11px;padding:3px 8px;background:var(--espresso);color:var(--cream);border:none;border-radius:var(--radius);cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;}
+  .add-discipline-btn:hover{background:var(--brown);}
+
+  .sync-btn{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-muted);background:none;border:1px solid var(--border);border-radius:var(--radius);padding:5px 10px;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+  .sync-btn:hover{background:var(--cream);color:var(--brown);}
+  .sync-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;}
+
+  .toast{position:fixed;bottom:60px;right:24px;background:var(--espresso);color:var(--cream);padding:11px 18px;border-radius:var(--radius);font-size:12px;font-weight:500;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.25s;box-shadow:0 8px 24px rgba(20,12,8,0.3);letter-spacing:0.04em;border-left:3px solid var(--sand);}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast.error{border-left-color:#C17070;}
+  .toast.success{border-left-color:#7A9A6A;}
+
+  .setup-banner{background:var(--cream);border:1px solid var(--sand);border-radius:var(--radius);padding:12px 16px;font-size:12px;color:var(--brown);margin-bottom:20px;line-height:1.6;border-left:3px solid var(--brown-mid);}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-left">
+    <div class="dbw-logo">DBW</div>
+    <div class="header-divider"></div>
+    <div class="header-title">SME Directory</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="syncAll()">
+      <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Sync
+    </button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add Contact</button>
+  </div>
+</header>
+
+<div class="app-body">
+  <aside class="sidebar">
+    <div class="filter-label">Search</div>
+    <input class="filter-input" type="text" id="search" placeholder="Firm, contact, notes..." oninput="applyFilters()">
+    <hr class="filter-divider">
+    <div class="filter-label">Discipline</div>
+    <select class="filter-input" id="filter-disc" onchange="applyFilters()"><option value="">All disciplines</option></select>
+    <hr class="filter-divider">
+    <div class="filter-label">State</div>
+    <select class="filter-input" id="filter-state" onchange="applyFilters()"><option value="">All states</option></select>
+    <hr class="filter-divider">
+    <div class="filter-label">Region</div>
+    <select class="filter-input" id="filter-region" onchange="applyFilters()"><option value="">All regions</option></select>
+    <hr class="filter-divider">
+    <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
+    <div class="result-count" id="result-count"></div>
+  </aside>
+
+  <main class="main">
+    <div class="status-bar">
+      <div class="status-dot syncing" id="status-dot"></div>
+      <span class="status-text" id="status-text">Connecting...</span>
+    </div>
+    <div id="setup-banner"></div>
+    <div class="page-header">
+      <div>
+        <div class="page-title">Subject Matter Experts</div>
+        <div class="page-meta">Designing Better Workspaces · Partner Network</div>
+      </div>
+      <button class="sync-btn" onclick="syncAll()">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+    <div id="cards-container"><div class="loading"><div class="spinner"></div>Loading contacts...</div></div>
+  </main>
+</div>
+
+<footer class="app-footer">
+  <div class="footer-left">Designing Better Workspaces.</div>
+  <div class="footer-right">DBW</div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Add Contact</div>
+      <button class="modal-close" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Firm Name *</label>
+          <input class="form-input" id="f-firm" type="text" placeholder="Company name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Primary Contact</label>
+          <input class="form-input" id="f-contact" type="text" placeholder="Full name">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input class="form-input" id="f-title" type="text" placeholder="Job title">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="f-phone" type="text" placeholder="(503) 555-0100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="f-email" type="email" placeholder="name@firm.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Region</label>
+          <input class="form-input" id="f-region" type="text" placeholder="e.g. Pacific NW">
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label">Discipline *</label>
+        <div class="pill-input-wrap">
+          <div class="pill-input-selected" id="disc-pills"></div>
+          <div class="pill-dropdown-trigger">
+            <select id="disc-select" onchange="addDisc(this)">
+              <option value="">+ Select discipline...</option>
+            </select>
+          </div>
+          <div class="add-discipline-row">
+            <input class="add-discipline-input" id="new-disc-input" type="text" placeholder="Or type a new discipline...">
+            <button class="add-discipline-btn" onclick="saveNewDiscipline()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label">Licensed States</label>
+        <div class="pill-input-wrap">
+          <div class="pill-input-selected" id="state-pills"></div>
+          <div class="pill-dropdown-trigger">
+            <select id="state-select" onchange="addState(this)">
+              <option value="">+ Add state...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Relationship Owner</label>
+          <input class="form-input" id="f-relowner" type="text" placeholder="DBW team member">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date Added</label>
+          <input class="form-input" id="f-date" type="date">
+        </div>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-input" id="f-notes" placeholder="Relevant context, past project experience, preferred contact method..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="delete-btn" onclick="deleteContact()" style="margin-right:auto;display:none;">Delete</button>
+      <button class="btn btn-sm" style="background:var(--parchment);color:var(--text-mid);border:1px solid var(--border);" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_KEY   = 'AIzaSyBwYitovzf08xD8SYBOkXX0322xGgNvFIE';
+const SHEET_ID  = '1C3eH4BB_mRNdJtY1wtHZoVEM-cqysJUp080o1K3e-_A';
+const SCRIPT_URL= 'https://script.google.com/macros/s/AKfycby3BZQU1CZtLuE42ruJD208KM0aTabWg1Tatbl6LQyAxEWs8xuoenOlCFR_70rdr9LjHg/exec';
+const TAB       = 'SME Directory';
+const BASE      = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
+const HEADERS   = ["Firm Name","Primary Contact","Title","Phone","Email","Discipline","Licensed States","Region","Relationship Owner","Date Added","Notes"];
+
+const STATE_LIST=[["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"]];
+const STATE_MAP=Object.fromEntries(STATE_LIST);
+
+let allContacts=[], disciplines=[], editingRow=null, selDiscs=[], selStates=[];
+
+// ── API CALLS ────────────────────────────────────────────────────────────
+
+async function sheetsRead(range) {
+  const url=`${BASE}/values/${encodeURIComponent(range)}?key=${API_KEY}`;
+  const res=await fetch(url);
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${res.status}`);}
+  return res.json();
+}
+
+async function scriptCall(data) {
+  const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(data)});
+  if(!res.ok) throw new Error(`Script error ${res.status}`);
+  return res.json();
+}
+
+async function scriptGet() {
+  const res=await fetch(SCRIPT_URL);
+  if(!res.ok) throw new Error(`Script GET error ${res.status}`);
+  return res.json();
+}
+
+// ── SYNC ─────────────────────────────────────────────────────────────────
+
+async function syncAll() {
+  setStatus('syncing','Syncing...');
+  document.getElementById('cards-container').innerHTML='<div class="loading"><div class="spinner"></div>Loading contacts...</div>';
+  try {
+    // Load disciplines from Apps Script (also creates Disciplines tab if needed)
+    let discData = {disciplines:[]};
+    try {
+      discData = await scriptGet();
+    } catch(discErr) {
+      console.warn('Could not load disciplines from sheet, using defaults:', discErr);
+    }
+    const DEFAULT_DISCIPLINES = [
+      'Mechanical (MEP)','Electrical','Plumbing','Structural',
+      'Civil & Geotechnical','Fire Protection','Acoustics','Lighting',
+      'Technology (AV/IT/Security)','Lab Planning & Biosafety',
+      'Cleanroom Design','Scanning & As-Built Capture',
+      'Stamping Architect','Design Support','Workplace Strategy',
+      'Environmental','Code & Permitting','Market/Industry Expert'
+    ];
+    disciplines = (discData.disciplines && discData.disciplines.length > 0)
+      ? discData.disciplines
+      : DEFAULT_DISCIPLINES;
+
+    // Populate discipline dropdown immediately after loading
+    fillSelect('disc-select', disciplines, v=>v, '+ Select discipline...');
+
+    // Load contacts via API key (read only)
+    await ensureHeaders();
+    const d=await sheetsRead(`${TAB}!A2:K1000`);
+    allContacts=(d.values||[]).filter(r=>r&&r[0]&&r[0].trim()).map((r,i)=>({
+      rowIndex:i+2, firm:r[0]||'', contact:r[1]||'', title:r[2]||'',
+      phone:r[3]||'', email:r[4]||'', discipline:r[5]||'',
+      states:r[6]||'', region:r[7]||'', relOwner:r[8]||'',
+      dateAdded:r[9]||'', notes:r[10]||''
+    }));
+
+    populateFilters();
+    applyFilters();
+    setStatus('ok',`${allContacts.length} contacts · ${disciplines.length} disciplines`);
+    document.getElementById('setup-banner').innerHTML='';
+  } catch(e) {
+    setStatus('error','Connection error');
+    document.getElementById('setup-banner').innerHTML=`<div class="setup-banner"><strong>Connection issue:</strong> ${e.message}. Make sure the Google Sheet is shared (Anyone with link → Editor).</div>`;
+    document.getElementById('cards-container').innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div class="empty-title">Could not connect</div><div class="empty-sub">Check the note above.</div></div>`;
+    console.error(e);
+  }
+}
+
+async function ensureHeaders() {
+  try {
+    const d=await sheetsRead(`${TAB}!A1:K1`);
+    if(!((d.values||[])[0]||[]).includes('Firm Name')) {
+      await scriptCall({action:'update',rowIndex:1,row:HEADERS});
+    }
+  } catch(e){console.warn('Header check failed',e);}
+}
+
+function setStatus(state,text){
+  const d=document.getElementById('status-dot');
+  d.className='status-dot'+(state==='syncing'?' syncing':state==='error'?' error':'');
+  document.getElementById('status-text').textContent=text;
+}
+
+// ── FILTERS ───────────────────────────────────────────────────────────────
+
+function populateFilters(){
+  const usedDiscs=[...new Set(allContacts.map(c=>c.discipline).filter(Boolean))].sort();
+  const regions=[...new Set(allContacts.map(c=>c.region).filter(Boolean))].sort();
+  const stSet=new Set();
+  allContacts.forEach(c=>c.states.split(',').forEach(s=>{const t=s.trim();if(t)stSet.add(t);}));
+
+  fillSelect('filter-disc', usedDiscs, v=>v, 'All disciplines');
+  fillSelect('filter-state',[...stSet].sort(),v=>`${v} — ${STATE_MAP[v]||v}`,'All states');
+  fillSelect('filter-region',regions,v=>v,'All regions');
+
+  // Modal selects
+  fillSelect('disc-select', disciplines, v=>v, '+ Select discipline...');
+  fillSelect('state-select', STATE_LIST.map(s=>s[0]), v=>`${v} — ${STATE_MAP[v]}`, '+ Add state...');
+}
+
+function fillSelect(id,items,labelFn,placeholder){
+  const el=document.getElementById(id),cur=el.value;
+  el.innerHTML=`<option value="">${placeholder}</option>`;
+  items.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=labelFn(v);el.appendChild(o);});
+  el.value=cur;
+}
+
+function applyFilters(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const di=document.getElementById('filter-disc').value;
+  const st=document.getElementById('filter-state').value;
+  const re=document.getElementById('filter-region').value;
+  const filtered=allContacts.filter(c=>{
+    if(q&&!`${c.firm} ${c.contact} ${c.notes} ${c.discipline}`.toLowerCase().includes(q))return false;
+    if(di&&c.discipline!==di)return false;
+    if(st&&!c.states.split(',').map(s=>s.trim()).includes(st))return false;
+    if(re&&c.region!==re)return false;
+    return true;
+  });
+  document.getElementById('result-count').textContent=filtered.length===allContacts.length?`${allContacts.length} contacts`:`${filtered.length} of ${allContacts.length}`;
+  renderCards(filtered);
+}
+
+function clearFilters(){
+  ['search','filter-disc','filter-state','filter-region'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+
+// ── CARDS ────────────────────────────────────────────────────────────────
+
+function renderCards(contacts){
+  const el=document.getElementById('cards-container');
+  if(!contacts.length){el.innerHTML=`<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div class="empty-title">No contacts found</div><div class="empty-sub">Adjust filters or add a new contact.</div></div>`;return;}
+  el.innerHTML=`<div class="cards-grid">${contacts.map(cardHTML).join('')}</div>`;
+}
+
+function cardHTML(c){
+  const stPills=c.states.split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="pill pill-state">${s}</span>`).join('');
+  const dPill=c.discipline?`<span class="pill pill-disc">${c.discipline}</span>`:'';
+  const rPill=c.region?`<span class="pill pill-region">${c.region}</span>`:'';
+  const sub=[c.contact,c.title].filter(Boolean).join(' · ');
+  const ph=c.phone?`<div class="card-meta-item"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>${c.phone}</span></div>`:'';
+  const em=c.email?`<div class="card-meta-item"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span>${c.email}</span></div>`:'';
+  const ro=c.relOwner?`<div class="card-meta-item"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>${c.relOwner}</span></div>`:'';
+  const notes=c.notes?`<div class="card-notes">${c.notes}</div>`:'';
+  return `<div class="contact-card" onclick="openEditModal(${c.rowIndex})">
+    <div class="card-header">
+      <div style="min-width:0"><div class="card-firm">${c.firm}</div>${sub?`<div class="card-contact">${sub}</div>`:''}</div>
+      <div class="card-actions"><button class="icon-btn" onclick="event.stopPropagation();openEditModal(${c.rowIndex})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>
+    </div>
+    <div class="card-pills">${dPill}${rPill}${stPills}</div>
+    <div class="card-meta">${ph}${em}${ro}</div>
+    ${notes}
+  </div>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+
+function openAddModal(){
+  editingRow=null;selDiscs=[];selStates=[];
+  document.getElementById('modal-title').textContent='Add Contact';
+  document.getElementById('delete-btn').style.display='none';
+  ['f-firm','f-contact','f-title','f-phone','f-email','f-region','f-relowner','f-notes','new-disc-input'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  renderModalPills();
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+function openEditModal(rowIndex){
+  const c=allContacts.find(x=>x.rowIndex===rowIndex);if(!c)return;
+  editingRow=rowIndex;
+  selDiscs=c.discipline?[c.discipline]:[];
+  selStates=c.states.split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('modal-title').textContent='Edit Contact';
+  document.getElementById('delete-btn').style.display='inline-flex';
+  document.getElementById('f-firm').value=c.firm;
+  document.getElementById('f-contact').value=c.contact;
+  document.getElementById('f-title').value=c.title;
+  document.getElementById('f-phone').value=c.phone;
+  document.getElementById('f-email').value=c.email;
+  document.getElementById('f-region').value=c.region;
+  document.getElementById('f-relowner').value=c.relOwner;
+  document.getElementById('f-date').value=c.dateAdded;
+  document.getElementById('f-notes').value=c.notes;
+  document.getElementById('new-disc-input').value='';
+  renderModalPills();
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modal-backdrop').classList.remove('open');}
+function handleBackdropClick(e){if(e.target===document.getElementById('modal-backdrop'))closeModal();}
+
+// ── DISCIPLINE MANAGEMENT ─────────────────────────────────────────────────
+
+function addDisc(sel){const v=sel.value;sel.value='';if(!v)return;selDiscs=[v];renderModalPills();}
+function removeDisc(v){selDiscs=selDiscs.filter(d=>d!==v);renderModalPills();}
+
+async function saveNewDiscipline(){
+  const input=document.getElementById('new-disc-input');
+  const val=input.value.trim();
+  if(!val)return;
+  if(disciplines.map(d=>d.toLowerCase()).includes(val.toLowerCase())){
+    // Already exists — just select it
+    selDiscs=[disciplines.find(d=>d.toLowerCase()===val.toLowerCase())];
+    input.value='';
+    renderModalPills();
+    return;
+  }
+  try {
+    await scriptCall({action:'addDiscipline',discipline:val});
+    disciplines.push(val);
+    disciplines.sort();
+    fillSelect('disc-select',disciplines,v=>v,'+ Select discipline...');
+    fillSelect('filter-disc',[...new Set(allContacts.map(c=>c.discipline).filter(Boolean))].sort(),v=>v,'All disciplines');
+    selDiscs=[val];
+    input.value='';
+    renderModalPills();
+    showToast(`"${val}" added to disciplines`,'success');
+  } catch(e){showToast('Could not save discipline','error');}
+}
+
+// Also allow Enter key on the input
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('new-disc-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();saveNewDiscipline();}});
+});
+
+// ── STATES ────────────────────────────────────────────────────────────────
+
+function addState(sel){const v=sel.value;sel.value='';if(!v||selStates.includes(v))return;selStates.push(v);selStates.sort();renderModalPills();}
+function removeState(v){selStates=selStates.filter(s=>s!==v);renderModalPills();}
+
+function renderModalPills(){
+  document.getElementById('disc-pills').innerHTML=selDiscs.map(d=>`<span class="pill-removable disc">${d}<button class="pill-remove-btn" onclick="removeDisc(${JSON.stringify(d)})">&#215;</button></span>`).join('');
+  document.getElementById('state-pills').innerHTML=selStates.map(s=>`<span class="pill-removable">${s}<button class="pill-remove-btn" onclick="removeState('${s}')">&#215;</button></span>`).join('');
+}
+
+// ── SAVE / DELETE ─────────────────────────────────────────────────────────
+
+async function saveContact(){
+  const firm=document.getElementById('f-firm').value.trim();
+  if(!firm){showToast('Firm name is required','error');return;}
+  const row=[firm,document.getElementById('f-contact').value.trim(),document.getElementById('f-title').value.trim(),document.getElementById('f-phone').value.trim(),document.getElementById('f-email').value.trim(),selDiscs.join(', '),selStates.join(', '),document.getElementById('f-region').value.trim(),document.getElementById('f-relowner').value.trim(),document.getElementById('f-date').value,document.getElementById('f-notes').value.trim()];
+  try {
+    if(editingRow){
+      await scriptCall({action:'update',rowIndex:editingRow,row});
+      showToast('Contact updated','success');
+    } else {
+      await scriptCall({action:'append',row});
+      showToast('Contact added','success');
+    }
+    closeModal();await syncAll();
+  } catch(e){showToast(`Save failed: ${e.message}`,'error');console.error(e);}
+}
+
+async function deleteContact(){
+  if(!editingRow||!confirm('Delete this contact? This cannot be undone.'))return;
+  try{
+    await scriptCall({action:'clear',rowIndex:editingRow});
+    showToast('Contact deleted','success');closeModal();await syncAll();
+  }catch(e){showToast(`Delete failed: ${e.message}`,'error');}
+}
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+syncAll();
+</script>
+</body>
+</html>
